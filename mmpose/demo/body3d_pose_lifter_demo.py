@@ -209,7 +209,7 @@ def process_one_image(args, detector, frame, frame_idx, pose_estimator,
     pose_lift_dataset = pose_lifter.cfg.test_dataloader.dataset
     pose_lift_dataset_name = pose_lifter.dataset_meta['dataset_name']
 
-    # First stage: conduct 2D pose detection in a Topdown manner
+    # First stage: conduct 2D pose detection in a Topdown manner 1-目标检测，得到人体边界框信息
     # use detector to obtain person bounding boxes
     det_result = inference_detector(detector, frame)
     pred_instance = det_result.pred_instances.cpu().numpy()
@@ -220,7 +220,7 @@ def process_one_image(args, detector, frame, frame_idx, pose_estimator,
     bboxes = bboxes[np.logical_and(pred_instance.labels == args.det_cat_id,
                                    pred_instance.scores > args.bbox_thr)]
 
-    # estimate pose results for current image
+    # estimate pose results for current image 2-2D人体姿态估计
     pose_est_results = inference_topdown(pose_estimator, frame, bboxes)
 
     if args.use_oks_tracking:
@@ -231,7 +231,7 @@ def process_one_image(args, detector, frame, frame_idx, pose_estimator,
     pose_det_dataset_name = pose_estimator.dataset_meta['dataset_name']
     pose_est_results_converted = []
 
-    # convert 2d pose estimation results into the format for pose-lifting
+    # convert 2d pose estimation results into the format for pose-lifting 3-姿势追踪和转换
     # such as changing the keypoint order, flipping the keypoint, etc.
     for i, data_sample in enumerate(pose_est_results):
         pred_instances = data_sample.pred_instances.cpu().numpy()
@@ -290,7 +290,7 @@ def process_one_image(args, detector, frame, frame_idx, pose_estimator,
 
     pose_est_results_list.append(pose_est_results_converted.copy())
 
-    # Second stage: Pose lifting
+    # Second stage: Pose lifting  4-姿势提升（2D->3D）
     # extract and pad input pose2d sequence
     pose_seq_2d = extract_pose_sequence(
         pose_est_results_list,
@@ -307,7 +307,7 @@ def process_one_image(args, detector, frame, frame_idx, pose_estimator,
         image_size=visualize_frame.shape[:2],
         norm_pose_2d=norm_pose_2d)
 
-    # post-processing
+    # post-processing 5-后处理
     for idx, pose_lift_result in enumerate(pose_lift_results):
         pose_lift_result.track_id = pose_est_results[idx].get('track_id', 1e4)
 
